@@ -1,0 +1,38 @@
+name: minicurso-devops
+
+services:
+  # Nossa Aplicação
+  api:
+    build: .
+    container_name: fastapi-minicurso
+    ports:
+      - "8000:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+
+  # O Banco de Dados
+  database:
+    image: postgres:15-alpine
+    container_name: postgres-minicurso
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      # Exposto na 5432 apenas se quiser acessar via DBeaver/PgAdmin do seu PC
+      - "5432:5432"
+    volumes:
+      # Persistência: Se apagar o container, os dados ficam salvos nesse volume
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  postgres_data:
